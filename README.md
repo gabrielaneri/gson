@@ -1,4 +1,4 @@
-# Fork for experimentations of [MC626](https://www.ic.unicamp.br/ensino/graduacao/alunos/disciplinas/programas/MC626) 2s2019
+# Fork for activities of [MC626](https://www.ic.unicamp.br/ensino/graduacao/alunos/disciplinas/programas/MC626) 2s2019
 
 ## Gson
 
