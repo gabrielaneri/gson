@@ -88,7 +88,11 @@ public class DefaultDateTypeAdapterTest extends TestCase {
           new DefaultDateTypeAdapter(DateFormat.MEDIUM, DateFormat.MEDIUM));
       assertParsed(String.format("1 janvier 1970%s00:00:00 UTC", afterYearSep),
           new DefaultDateTypeAdapter(DateFormat.LONG, DateFormat.LONG));
-//      assertParsed("jeudi 1 janvier 1970 à 00:00:00 Coordinated Universal Time", new DefaultDateTypeAdapter(DateFormat.FULL, DateFormat.FULL));
+      assertParsed(JavaVersion.isJava9OrLater() ? (JavaVersion.getMajorJavaVersion() <11 ?
+                      "jeudi 1 janvier 1970 à 00:00:00 Coordinated Universal Time" :
+                      "jeudi 1 janvier 1970 à 00:00:00 Temps universel coordonné") :
+                      "jeudi 1 janvier 1970 00 h 00 UTC",
+          new DefaultDateTypeAdapter(DateFormat.FULL, DateFormat.FULL));
     } finally {
       TimeZone.setDefault(defaultTimeZone);
       Locale.setDefault(defaultLocale);
@@ -164,6 +168,7 @@ public class DefaultDateTypeAdapterTest extends TestCase {
     assertEquals(toLiteral(formatter.format(currentDate)), dateString);
   }
 
+  @SuppressWarnings("unused")
   public void testInvalidDatePattern() throws Exception {
     try {
       new DefaultDateTypeAdapter(Date.class, "I am a bad Date pattern....");
