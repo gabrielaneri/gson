@@ -174,6 +174,34 @@ public final class JsonReaderTest extends TestCase {
     assertEquals(JsonToken.END_DOCUMENT, reader.peek());
   }
 
+  public void testReadTwoEscapeCharacter() throws IOException {
+    String json = "{\"\\t\": \"a\", \"\\b\": \"b\", \"\\n\": \"c\", \"\\r\": \"d\", \"\\f\": \"e\"}";
+    JsonReader reader = new JsonReader(reader(json));
+    reader.beginObject();
+    assertEquals("\t", reader.nextName());
+    assertEquals("a", reader.nextString());
+    assertEquals("\b", reader.nextName());
+    assertEquals("b", reader.nextString());
+    assertEquals("\n", reader.nextName());
+    assertEquals("c", reader.nextString());
+    assertEquals("\r", reader.nextName());
+    assertEquals("d", reader.nextString());
+    assertEquals("\f", reader.nextName());
+    assertEquals("e", reader.nextString());
+    reader.endObject();
+    assertEquals(JsonToken.END_DOCUMENT, reader.peek());
+  }
+
+  public void testReadUnicodeEscapeCharacter() throws IOException {
+    String json = "{\"\\u2022\": \"a\"}";
+    JsonReader reader = new JsonReader(reader(json));
+    reader.beginObject();
+    assertEquals("\u2022", reader.nextName());
+    assertEquals("a", reader.nextString());
+    reader.endObject();
+    assertEquals(JsonToken.END_DOCUMENT, reader.peek());
+  }
+
   public void testInvalidJsonInput() throws IOException {
     String json = "{\n"
         + "   \"h\\ello\": true,\n"
