@@ -16,18 +16,122 @@
 
 package com.google.gson.internal;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Random;
+
 import com.google.gson.common.MoreAsserts;
 import com.google.gson.internal.LinkedHashTreeMap.AvlBuilder;
 import com.google.gson.internal.LinkedHashTreeMap.AvlIterator;
 import com.google.gson.internal.LinkedHashTreeMap.Node;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Random;
+
 import junit.framework.TestCase;
 
 public final class LinkedHashTreeMapTest extends TestCase {
+	
+
+	  public void testFindByEntry() {
+		  LinkedHashTreeMap<String, String> map = new LinkedHashTreeMap<String, String>();
+		  map.put("a", "android");
+		  map.put("b", "banana");
+		  
+		  LinkedHashTreeMap<String, String> map2 = new LinkedHashTreeMap<String, String>();
+		  map2.put("a", "android");
+		  
+		  Node<String, String> result = map.findByEntry(map2.entrySet().iterator().next());
+		  assertNotNull(result);
+	  }
+	  
+	  public void testConstructorComparator() {
+		  Comparator comparator = null;
+		  LinkedHashTreeMap<String, String> map = new LinkedHashTreeMap<String, String>(comparator);
+		  
+		  assertNotNull(map.comparator);
+		  assertEquals((3*map.table.length)/4, map.threshold);
+	  }
+	  
+	  public void testEqualsNode() {
+		  LinkedHashTreeMap<String, String> map = new LinkedHashTreeMap<String, String>();
+		  map.put("a", "android");
+		  map.put("b", "banana");
+		  
+		  Node<String, String> find = map.find("a", false);
+		  boolean isEquals = find.equals("test");
+		  assertFalse(isEquals);
+		  
+		  Node<String, String> newNode = map.find("c", false);
+		  isEquals = find.equals(newNode);
+		  assertFalse(isEquals);
+		  
+		  newNode = map.find("a", false);
+		  isEquals = find.equals(newNode);
+		  assertTrue(isEquals);
+	  }
+	  
+	  public void testRemove() {
+		  LinkedHashTreeMap<String, String> map = new LinkedHashTreeMap<String, String>();
+		  map.put("a", "android");
+		  map.put("b", "banana");
+		  
+		  String removed = map.remove("c");
+		  assertNull(removed);
+		  
+		  removed = map.remove("b");
+		  assertNotNull(removed);
+	  }
+	  
+	  public void testRemoveInternal() {
+		  LinkedHashTreeMap<String, String> map = new LinkedHashTreeMap<String, String>();
+		  map.put("a", "android");
+		  map.put("az", "az");
+		  map.put("asd", "ads");
+		  map.put("b", "banana");
+		  
+		  Node<String, String> find = map.find("a", false);
+		  find.left = map.find("az", false);
+		 
+		  assertNotNull(find.left);
+		  assertNotNull(find.right);
+
+		  int modCountBefore = map.modCount;
+		  
+		  map.removeInternal(find, false);
+		  
+		  assertEquals(3, map.size);
+		  assertTrue(map.modCount > modCountBefore);
+	  }
+	  
+	  public void testRemoveInternalByKey() {
+		  LinkedHashTreeMap<String, String> map = new LinkedHashTreeMap<String, String>();
+		  map.put("a", "android");
+		  map.put("b", "banana");
+		  		  
+		  Node<String, String> result = map.removeInternalByKey("xyz");
+		  assertNull(result);
+		  
+		  result = map.removeInternalByKey("a");
+		  assertNotNull(result);
+	  }
+	  
+	  public void testSetValue() {
+		  LinkedHashTreeMap<String, String> map = new LinkedHashTreeMap<String, String>();
+		  map.put("b", "banana");
+		  
+		  Node<String, String> find = map.find("b", false);
+		  
+		  String oldValue = find.setValue(null);
+		  assertNotNull(oldValue);
+		  assertEquals("banana", oldValue);
+		  assertNull(find.getValue());
+		  
+		  oldValue = find.setValue("butterfly");
+		  assertNull(oldValue);
+		  assertNotNull(find.getValue());
+	  }
+	
   public void testIterationOrder() {
     LinkedHashTreeMap<String, String> map = new LinkedHashTreeMap<String, String>();
     map.put("a", "android");
@@ -279,6 +383,7 @@ public final class LinkedHashTreeMapTest extends TestCase {
       return String.format("(%s %s %s)", toString(root.left), root.key, toString(root.right));
     }
   }
+  
 
   private <T> void assertIterationOrder(Iterable<T> actual, T... expected) {
     ArrayList<T> actualList = new ArrayList<T>();
