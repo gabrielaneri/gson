@@ -31,7 +31,7 @@ public final class JsonTreeWriterTest extends TestCase {
     writer.endArray();
     assertEquals("[1,2,3]", writer.get().toString());
   }
-
+  
   public void testNestedArray() throws IOException {
     JsonTreeWriter writer = new JsonTreeWriter();
     writer.beginArray();
@@ -43,6 +43,13 @@ public final class JsonTreeWriterTest extends TestCase {
     writer.endArray();
     writer.endArray();
     assertEquals("[[],[[]]]", writer.get().toString());
+  }
+
+  public void testBeginArray() throws IOException {
+    JsonTreeWriter writer = new JsonTreeWriter();
+    writer.beginArray();
+    writer.endArray();
+    assertEquals("[]", writer.get().toString());
   }
 
   public void testObject() throws IOException {
@@ -131,6 +138,15 @@ public final class JsonTreeWriterTest extends TestCase {
     assertEquals("[NaN,-Infinity,Infinity]", writer.get().toString());
   }
 
+  public void testBooleanValues() throws IOException {
+    JsonTreeWriter writer = new JsonTreeWriter();
+    writer.beginArray();
+    writer.value(true);
+    writer.value(false);
+    writer.endArray();
+    assertEquals("[true,false]", writer.get().toString());
+  }
+
   public void testStrictNansAndInfinities() throws IOException {
     JsonTreeWriter writer = new JsonTreeWriter();
     writer.setLenient(false);
@@ -171,5 +187,31 @@ public final class JsonTreeWriterTest extends TestCase {
       fail();
     } catch (IllegalArgumentException expected) {
     }
+  }
+
+  public void testStringNullValue() throws IOException {
+    JsonTreeWriter writer = new JsonTreeWriter();
+    String x = null;
+    writer.value(x);
+    assertEquals("null", writer.get().toString());
+  }
+
+  public void testStringValue() throws IOException {
+    JsonTreeWriter writer = new JsonTreeWriter();
+    writer.value("A");
+    assertEquals("\"A\"", writer.get().toString());
+  }
+
+  public void testBooleanNullValue() throws IOException {
+    JsonTreeWriter writer = new JsonTreeWriter();
+    Boolean x = null;
+    writer.value(x);
+    assertEquals("null", writer.get().toString());
+  }
+
+  public void testBooleanValue() throws IOException {
+    JsonTreeWriter writer = new JsonTreeWriter();
+    writer.value(true);
+    assertEquals("true", writer.get().toString());
   }
 }
