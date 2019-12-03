@@ -32,8 +32,29 @@ import junit.framework.TestCase;
 
 public final class LinkedHashTreeMapTest extends TestCase {
 	
+	public void testFind() {
+		LinkedHashTreeMap<String, String> map = new LinkedHashTreeMap<String, String>();
+		map.put("a", "android");
+		map.put("b", "banana");
+		map.put("c", "cdscd");
+		map.put("d", "droid");
+		map.put("e", "fdsaf");
+		map.put("f", "andid");
+		map.put("g", "gd");
+		map.put("h", "hd");
+		map.put("i", "id");
+		map.put("j", "jd");
+		map.put("k", "kd");
+		map.put("l", "ld");
+		map.put("m", "md");
+		
+		int modCountBefore = map.modCount;
+		Node<String, String> result = map.find("n", true);
+		assertEquals(modCountBefore + 1, map.modCount);
+		assertEquals(map.threshold, (map.table.length / 2) + (map.table.length / 4));
+	}
 
-	  public void testFindByEntry() {
+	  public void testFindByEntrySucceed() {
 		  LinkedHashTreeMap<String, String> map = new LinkedHashTreeMap<String, String>();
 		  map.put("a", "android");
 		  map.put("b", "banana");
@@ -42,7 +63,20 @@ public final class LinkedHashTreeMapTest extends TestCase {
 		  map2.put("a", "android");
 		  
 		  Node<String, String> result = map.findByEntry(map2.entrySet().iterator().next());
-		  assertNotNull(result);
+		  assertEquals(result.getKey(), map.entrySet().iterator().next().getKey());
+		  assertEquals(result.getValue(), map.entrySet().iterator().next().getValue());
+	  }
+	  
+	  public void testFindByEntryFails() {
+		  LinkedHashTreeMap<String, String> map = new LinkedHashTreeMap<String, String>();
+		  map.put("a", "android");
+		  map.put("b", "banana");
+		  
+		  LinkedHashTreeMap<String, String> map2 = new LinkedHashTreeMap<String, String>();
+		  map2.put("a", "ios");
+		  
+		  Node<String, String> result = map.findByEntry(map2.entrySet().iterator().next());
+		  assertNull(result);
 	  }
 	  
 	  public void testConstructorComparator() {
@@ -71,6 +105,17 @@ public final class LinkedHashTreeMapTest extends TestCase {
 		  assertTrue(isEquals);
 	  }
 	  
+	  public void testEqualsNodeValueNull() {
+		  LinkedHashTreeMap<String, String> map = new LinkedHashTreeMap<String, String>();
+		  map.put("a", "android");
+		  map.put("b", null);
+		  
+		  Node<String, String> b = map.find("b", false);
+		  Node<String, String> a = map.find("a", false);
+		  boolean isEquals = b.equals(a);
+		  assertFalse(isEquals);
+	  }
+	  
 	  public void testRemove() {
 		  LinkedHashTreeMap<String, String> map = new LinkedHashTreeMap<String, String>();
 		  map.put("a", "android");
@@ -91,15 +136,76 @@ public final class LinkedHashTreeMapTest extends TestCase {
 		  map.put("b", "banana");
 		  
 		  Node<String, String> find = map.find("a", false);
+		  Node<String, String> left = map.find("az", false);
+		  Node<String, String> right = map.find("asd", false);
+		  Node<String, String> adjacent = (left.height > right.height) ? left.last() : right.first();
+		  int leftHeight = left.height;
+		  int rightHeight = right.height;
+		  left.parent = find;
 		  find.left = map.find("az", false);
 		 
 		  assertNotNull(find.left);
+		  assertNotNull(find.right);
+		  assertNull(find.parent);
+		  assertNotNull(adjacent.parent);
+
+		  int modCountBefore = map.modCount;
+		  int index = find.hash & (map.table.length - 1);
+		  
+		  map.removeInternal(find, false);
+		  
+		  assertEquals(map.table[index], adjacent);
+		  assertEquals(adjacent.height, Math.max(leftHeight, rightHeight) + 1);
+		  assertNull(adjacent.parent);
+		  assertEquals(3, map.size);
+		  assertTrue(map.modCount > modCountBefore);
+	  }
+	  
+	  public void testRemoveInternalLeftNull() {
+		  LinkedHashTreeMap<String, String> map = new LinkedHashTreeMap<String, String>();
+		  map.put("a", "android");
+		  map.put("az", "az");
+		  map.put("asd", "ads");
+		  map.put("b", "banana");
+		  
+		  Node<String, String> find = map.find("a", false);
+		  Node<String, String> right = map.find("asd", false);
+		 
+		  assertNull(find.left);
 		  assertNotNull(find.right);
 
 		  int modCountBefore = map.modCount;
 		  
 		  map.removeInternal(find, false);
 		  
+		  assertNull(right.parent);
+		  assertEquals(3, map.size);
+		  assertTrue(map.modCount > modCountBefore);
+	  }
+	  
+	  public void testRemoveInternalRightNull() {
+		  LinkedHashTreeMap<String, String> map = new LinkedHashTreeMap<String, String>();
+		  map.put("a", "android");
+		  map.put("az", "az");
+		  map.put("asd", "ads");
+		  map.put("b", "banana");
+		  
+		  Node<String, String> find = map.find("a", false);
+		  Node<String, String> left = map.find("az", false);
+		  left.parent = find;
+		  find.left = map.find("az", false);
+		  find.right = null;
+		 
+		  assertNull(find.parent);
+		  assertNotNull(left.parent);
+		  assertNotNull(find.left);
+		  assertNull(find.right);
+
+		  int modCountBefore = map.modCount;
+		  
+		  map.removeInternal(find, false);
+		  
+		  assertNull(left.parent);
 		  assertEquals(3, map.size);
 		  assertTrue(map.modCount > modCountBefore);
 	  }
@@ -113,7 +219,12 @@ public final class LinkedHashTreeMapTest extends TestCase {
 		  assertNull(result);
 		  
 		  result = map.removeInternalByKey("a");
-		  assertNotNull(result);
+		  LinkedHashTreeMap<String, String> map2 = new LinkedHashTreeMap<String, String>();
+		  map2.put("a", "android");
+		  Node<String, String> resultFind = map.findByEntry(map2.entrySet().iterator().next());
+		  assertNull(resultFind);
+		  assertEquals(result.getKey(), "a");
+		  assertEquals(result.getValue(), "android");
 	  }
 	  
 	  public void testSetValue() {
@@ -226,7 +337,9 @@ public final class LinkedHashTreeMapTest extends TestCase {
     map.put("a", "android");
     map.put("c", "cola");
     map.put("b", "bbq");
+    int modCountBefore = map.modCount;
     map.clear();
+    assertEquals(modCountBefore + 1, map.modCount);
     assertIterationOrder(map.keySet());
     assertEquals(0, map.size());
   }
